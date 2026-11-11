@@ -1,0 +1,29 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+
+# Links antigos que apontavam para o arquivo original
+[[redirects]]
+  from = "/Exame de Consciência.html"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/Exame de Consciência"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/Exame%20de%20Consci%C3%AAncia.html"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/Exame%20de%20Consci%C3%AAncia"
+  to = "/"
+  status = 301
