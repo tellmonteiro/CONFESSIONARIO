@@ -1,0 +1,968 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Exame de Consciência</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout concept: phone-first single page app — a sticky tab bar switches between
+     an intro, four numbered examination sections (each with subsections of checkbox
+     items) and a live "Minha Lista" summary built from whatever is checked. */
+  :root{
+    --bg:#F7F1EA;
+    --surface:#FFFFFF;
+    --surface-2:#EFE4D6;
+    --fg:#2A2130;
+    --muted:#746A80;
+    --accent:#9A1B2E;
+    --accent-ink:#FFFFFF;
+    --border:#E4D7C6;
+    --checked:#F8E6E4;
+    --font-display:'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15111C;
+      --surface:#1E1826;
+      --surface-2:#271F31;
+      --fg:#EFE7F5;
+      --muted:#AC9FBE;
+      --accent:#E35367;
+      --accent-ink:#2B0610;
+      --border:#3A2B2E;
+      --checked:#341C21;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15111C;
+    --surface:#1E1826;
+    --surface-2:#271F31;
+    --fg:#EFE7F5;
+    --muted:#AC9FBE;
+    --accent:#E35367;
+    --accent-ink:#2B0610;
+    --border:#3A2B2E;
+    --checked:#341C21;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--font-body);
+    padding-inline:16px;
+    padding-block:14px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    max-width:640px;
+    margin-inline:auto;
+  }
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0;}
+  p{margin:0; line-height:1.55;}
+
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+  }
+  header.top h1{font-size:1.5rem; font-weight:600; letter-spacing:-0.01em;}
+  header.top .eyebrow{
+    font-family:var(--font-body); font-size:.68rem; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:2px; display:block;
+  }
+
+  nav.tabs{
+    position:sticky; top:env(safe-area-inset-top,0px);
+    z-index:5; background:var(--bg);
+    display:flex; gap:6px; overflow-x:auto;
+    padding-block:6px; margin-inline:-16px; padding-inline:16px;
+    border-bottom:1px solid var(--border);
+    scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    flex:0 0 auto;
+    font-family:var(--font-body); font-weight:600; font-size:.82rem;
+    color:var(--muted); background:transparent; border:1px solid transparent;
+    border-radius:999px; padding:7px 13px; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  nav.tabs button .badge{
+    font-variant-numeric:tabular-nums; font-size:.68rem; font-weight:600;
+    color:var(--muted); background:var(--surface-2); border-radius:999px;
+    padding:1px 6px;
+  }
+  nav.tabs button[aria-selected="true"]{
+    color:var(--accent-ink); background:var(--accent); border-color:var(--accent);
+  }
+  nav.tabs button[aria-selected="true"] .badge{color:var(--accent-ink); background:rgb(255 255 255 / .22);}
+  nav.tabs button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  main{display:flex; flex-direction:column; gap:18px; padding-bottom:84px;}
+  section.view{display:flex; flex-direction:column; gap:18px;}
+  section.view[hidden]{display:none;}
+
+  .intro-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:10px;
+  }
+  .intro-card p{color:var(--fg);}
+  .intro-card.muted-card{background:var(--surface-2);}
+
+  ol.steps{margin:0; padding-left:1.15em; display:flex; flex-direction:column; gap:8px;}
+  ol.steps li{padding-left:2px; line-height:1.5;}
+  ol.steps li::marker{font-family:var(--font-display); color:var(--accent); font-weight:600;}
+
+  blockquote.model{
+    margin:0; font-style:italic; color:var(--fg); line-height:1.55;
+    border-left:3px solid var(--accent); padding-left:12px;
+  }
+
+  .group-title{
+    font-size:1.02rem; font-weight:600; font-family:var(--font-display);
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+  }
+  .group-title .count{
+    font-family:var(--font-body); font-variant-numeric:tabular-nums;
+    font-size:.72rem; font-weight:600; color:var(--muted);
+  }
+  .group{display:flex; flex-direction:column; gap:10px;}
+  .section-intro{color:var(--muted); font-size:.88rem; line-height:1.5;}
+  .verse{color:var(--fg); font-size:.89rem; line-height:1.55;}
+
+  ul.items{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px;}
+  ul.items li{margin:0;}
+  label.item{
+    display:flex; align-items:flex-start; gap:11px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:11px 13px; cursor:pointer; min-height:44px;
+    transition:background .12s ease, border-color .12s ease;
+  }
+  label.item:has(input:checked){
+    background:var(--checked); border-color:var(--accent);
+  }
+  label.item input{
+    appearance:none; -webkit-appearance:none;
+    width:21px; height:21px; min-width:21px; margin-top:1px;
+    border:1.6px solid var(--muted); border-radius:6px; background:var(--surface);
+    position:relative; cursor:pointer;
+  }
+  label.item input:checked{background:var(--accent); border-color:var(--accent);}
+  label.item input:checked::after{
+    content:""; position:absolute; left:6px; top:2px; width:5px; height:10px;
+    border:solid var(--accent-ink); border-width:0 2px 2px 0; transform:rotate(40deg);
+  }
+  label.item input:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  label.item span{line-height:1.42; font-size:.92rem; padding-top:1px;}
+
+  button.primary, button.secondary, button.ghost{
+    font-family:var(--font-body); font-weight:600; font-size:.88rem;
+    border-radius:11px; padding:11px 16px; cursor:pointer; border:1px solid transparent;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button.primary{background:var(--accent); color:var(--accent-ink);}
+  button.secondary{background:var(--surface-2); color:var(--fg); border-color:var(--border);}
+  button.ghost{background:transparent; color:var(--muted); border-color:var(--border);}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+
+  .confirm-row{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:12px;
+    padding:10px 12px;
+  }
+  .confirm-row span{font-size:.85rem; color:var(--muted);}
+
+  .summary-group{display:flex; flex-direction:column; gap:8px;}
+  .summary-group h3{font-size:.95rem; font-weight:600;}
+  .summary-sub{font-size:.76rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600;}
+  ol.summary-list{margin:0; padding-left:1.25em; display:flex; flex-direction:column; gap:6px;}
+  ol.summary-list li{line-height:1.5; font-size:.94rem;}
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+    background:var(--surface); border:1px dashed var(--border); border-radius:14px;
+    padding:20px 18px; color:var(--muted); font-size:.9rem; line-height:1.55;
+  }
+
+  .prayer-card{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:16px;
+    padding:18px; display:flex; flex-direction:column; gap:12px;
+  }
+  .prayer-card p{font-family:var(--font-display); font-style:italic; font-size:1.04rem; line-height:1.6;}
+
+  .source{
+    font-size:.78rem; color:var(--muted); line-height:1.5; text-align:center;
+    padding-top:4px; border-top:1px solid var(--border);
+  }
+
+  .dock{
+    position:fixed; left:0; right:0; bottom:0; z-index:6;
+    display:flex; justify-content:center;
+    padding-inline:16px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+    padding-top:10px;
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+    pointer-events:none;
+  }
+  .dock-inner{
+    pointer-events:auto;
+    width:100%; max-width:608px;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:0 8px 24px rgb(0 0 0 / .14);
+    padding:10px 10px 10px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .dock-count{font-size:.84rem; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .dock-count strong{color:var(--fg); font-family:var(--font-display); font-size:1.1rem; font-weight:600;}
+  .dock[hidden]{display:none;}
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%) translateY(8px); opacity:0;
+    background:var(--fg); color:var(--bg); font-size:.82rem; font-weight:600;
+    padding:9px 16px; border-radius:999px; z-index:9;
+    transition:opacity .18s ease, transform .18s ease; pointer-events:none;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    label.item, .toast{transition:none;}
+  }
+</style>
+
+<header class="top">
+  <div>
+    <span class="eyebrow">Antes da confissão</span>
+    <h1>Exame de Consciência</h1>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Seções do exame"></nav>
+
+<main>
+  <!-- Views are rendered by script into this container -->
+  <section class="view" id="view-intro" role="tabpanel"></section>
+  <section class="view" id="view-prep" role="tabpanel" hidden></section>
+  <section class="view" id="view-s0" role="tabpanel" hidden></section>
+  <section class="view" id="view-s1" role="tabpanel" hidden></section>
+  <section class="view" id="view-s2" role="tabpanel" hidden></section>
+  <section class="view" id="view-s3" role="tabpanel" hidden></section>
+  <section class="view" id="view-lista" role="tabpanel" hidden></section>
+</main>
+
+<div class="dock" id="dock">
+  <div class="dock-inner">
+    <span class="dock-count"><strong id="dockCount">0</strong> itens marcados</span>
+    <button class="primary" id="dockBtn" type="button">Ver minha lista</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DATA = [
+    {
+      key:"s0", num:"1", short:"1", title:"Deus, Igreja e Família",
+      groups:[
+        { title:"Deus, Fé e Sacramentos", items:[
+          "Abandonei a oração por negligência.",
+          "Faltei à Missa aos domingos ou dias santos de preceito sem motivo grave.",
+          "Cheguei deliberadamente atrasado ou saí antes do fim da Missa.",
+          "Fiz trabalho desnecessário no domingo e deixei de prestar culto a Deus.",
+          "Deixei de observar jejum ou abstinência prescritos, sem motivo justo.",
+          "Desrespeitei o jejum eucarístico sem necessidade.",
+          "Comunguei sabendo que estava em pecado grave.",
+          "Ocultei deliberadamente pecado grave em uma Confissão anterior.",
+          "Recebi um sacramento com irreverência ou sem preparação.",
+          "Profanei lugar, objeto, imagem ou coisa sagrada.",
+          "Usei o nome de Deus, de Nossa Senhora ou dos santos em vão.",
+          "Blasfemei contra Deus ou contra as coisas santas.",
+          "Fiz juramento falso ou invoquei Deus para sustentar mentira.",
+          "Quebrei promessa ou voto feito a Deus sem motivo justo.",
+          "Neguei ou escondi minha fé por vergonha ou conveniência.",
+          "Ridicularizei a fé, a Igreja, seus ministros ou ensinamentos.",
+          "Consultei horóscopo, tarô, adivinhação ou leitura de sorte.",
+          "Usei simpatias, amuletos ou superstições como se tivessem poder.",
+          "Procurei magia, feitiçaria, ocultismo ou práticas semelhantes.",
+          "Participei de espiritismo, mediunidade ou invocação dos mortos.",
+          "Coloquei dinheiro, trabalho, prazer, poder ou pessoa acima de Deus.",
+          "Presumi do perdão de Deus e escolhi pecar pensando em confessar depois.",
+          "Rejeitei voluntariamente ensinamento da fé sem buscar compreendê-lo.",
+          "Deixei de ajudar materialmente a Igreja, embora pudesse, por egoísmo."
+        ]},
+        { title:"Família, Autoridade e Responsabilidades", items:[
+          "Desrespeitei ou tratei com ingratidão meus pais ou responsáveis.",
+          "Desobedeci orientação justa de meus pais ou responsáveis.",
+          "Abandonei pai, mãe, idoso, doente ou familiar que precisava de mim.",
+          "Fui grosseiro, indiferente ou impaciente com minha família.",
+          "Gritei, xinguei ou humilhei cônjuge, filhos ou pessoas de casa.",
+          "Usei violência física dentro da família.",
+          "Usei silêncio, ameaça ou chantagem para punir ou manipular.",
+          "Negligenciei atenção, diálogo ou carinho devido ao meu cônjuge.",
+          "Negligenciei a educação humana e cristã dos filhos.",
+          "Dei mau exemplo ou incentivei filhos e dependentes a pecar.",
+          "Afastei-me da família por trabalho, diversão ou celular em excesso.",
+          "Abusei de autoridade ou fiz exigências injustas.",
+          "Descumpri deveres sérios do meu estado de vida.",
+          "Desobedeci autoridade legítima em matéria justa.",
+          "Recusei diálogo ou reconciliação por orgulho."
+        ]}
+      ]
+    },
+    {
+      key:"s1", num:"2", short:"2", title:"Vida, Caridade e Castidade",
+      groups:[
+        { title:"Vida, Paz e Caridade", items:[
+          "Alimentei ódio ou rancor contra alguém.",
+          "Desejei seriamente o mal ou a morte de alguém.",
+          "Planejei ou procurei vingança.",
+          "Tirei ou tentei tirar a vida de alguém.",
+          "Agredi ou feri alguém de propósito.",
+          "Ameacei, intimidei ou aterrorizei outra pessoa.",
+          "Xinguei, humilhei ou tratei alguém com crueldade.",
+          "Pratiquei bullying, perseguição ou assédio moral.",
+          "Discriminei alguém por raça, origem, condição, idade ou limitação.",
+          "Maltratei deliberadamente animais.",
+          "Recusei perdoar ou mantive inimizade quando podia buscar a paz.",
+          "Provoquei brigas, divisões ou rivalidades.",
+          "Dirigi de modo imprudente e coloquei vidas em risco.",
+          "Embriaguei-me ou perdi o controle pelo álcool.",
+          "Usei, ofereci ou incentivei o uso de drogas ilícitas.",
+          "Abusei de remédios ou outras substâncias.",
+          "Pratiquei, financiei ou colaborei diretamente com aborto.",
+          "Pressionei ou incentivei alguém a praticar aborto.",
+          "Apoiei ou colaborei diretamente com eutanásia.",
+          "Abandonei gestante, criança, idoso, doente ou pessoa vulnerável.",
+          "Neguei socorro que eu podia prestar sem grave risco.",
+          "Causei escândalo ou incentivei outra pessoa a pecar."
+        ]},
+        { title:"Castidade, Pureza e Fidelidade", items:[
+          "Consenti deliberadamente em pensamentos ou fantasias impuras.",
+          "Olhei alguém com cobiça e o tratei interiormente como objeto.",
+          "Procurei ou assisti pornografia.",
+          "Produzi, guardei, vendi ou compartilhei pornografia.",
+          "Contei piadas obscenas ou mantive conversas sexualmente impróprias.",
+          "Cometi masturbação.",
+          "Pedi, enviei, guardei ou divulguei imagens íntimas.",
+          "Pratiquei conversa sexual virtual ou troca de mensagens eróticas.",
+          "Tive relações sexuais fora de um matrimônio válido.",
+          "Mantive vida sexual em união sem matrimônio válido.",
+          "Cometi adultério.",
+          "Mantive infidelidade afetiva ou virtual.",
+          "Cultivei flerte ou vínculo que ameaçou meu matrimônio ou vocação.",
+          "Procurei ou paguei por prostituição.",
+          "Usei alguém para obter prazer sexual.",
+          "Pressionei ou manipulei alguém para obter ato sexual.",
+          "Cometi assédio sexual.",
+          "Cometi abuso ou violência sexual.",
+          "Desrespeitei a liberdade ou o consentimento de outra pessoa.",
+          "Usei deliberadamente método contraceptivo contrário ao ensinamento da Igreja.",
+          "Recorri à esterilização com finalidade contraceptiva, sem necessidade médica.",
+          "Quebrei compromisso livremente assumido de celibato ou castidade.",
+          "Procurei voluntariamente ocasiões próximas de pecado contra a castidade."
+        ]}
+      ]
+    },
+    {
+      key:"s2", num:"3", short:"3", title:"Bens, Trabalho e Verdade",
+      groups:[
+        { title:"Bens, Dinheiro, Estudo e Trabalho", items:[
+          "Furtei pequenas coisas.",
+          "Roubei dinheiro ou objeto de valor.",
+          "Fiquei com objeto encontrado sem procurar o dono.",
+          "Fiquei conscientemente com troco recebido a mais.",
+          "Não devolvi objeto ou dinheiro emprestado.",
+          "Usei dinheiro, material ou bem do trabalho sem permissão.",
+          "Danifiquei bem alheio ou público e não reparei.",
+          "Cometi fraude, golpe, extorsão ou apropriação indevida.",
+          "Enganei em preço, peso, medida, qualidade ou promessa.",
+          "Cobrei valor injusto ou tirei vantagem da necessidade alheia.",
+          "Deixei de pagar dívida quando tinha condições.",
+          "Deixei de pagar salário ou remuneração justa.",
+          "Ofereci, paguei, pedi ou recebi suborno.",
+          "Participei de corrupção ou favorecimento injusto.",
+          "Sonegei imposto ou menti para receber benefício indevido.",
+          "Falsifiquei documento, assinatura, recibo ou informação.",
+          "Usei ou distribuí conteúdo pirateado conscientemente.",
+          "Copiei trabalho alheio ou cometi plágio.",
+          "Colei ou trapaceei em prova, concurso ou seleção.",
+          "Desperdicei deliberadamente tempo de trabalho.",
+          "Fiz meu trabalho com negligência grave e consciente.",
+          "Explorei trabalhador, empregado ou pessoa vulnerável.",
+          "Apostei ou joguei de modo irresponsável.",
+          "Gastei dinheiro necessário à família com supérfluos ou vícios.",
+          "Cobicei injustamente bens, cargo ou vantagens de outra pessoa.",
+          "Recusei ajuda material razoável a quem necessitava, embora pudesse ajudar."
+        ]},
+        { title:"Verdade, Segredos e Reputação", items:[
+          "Contei mentira para escapar de culpa ou obter vantagem.",
+          "Contei mentira grave que prejudicou outra pessoa.",
+          "Omiti parte da verdade com intenção de enganar.",
+          "Exagerei ou inventei fatos para chamar atenção.",
+          "Fiz promessa sem intenção de cumprir.",
+          "Dei falso testemunho ou fiz acusação falsa.",
+          "Caluniei alguém, atribuindo-lhe falta que não cometeu.",
+          "Revelei defeito verdadeiro de alguém sem necessidade justa.",
+          "Fiz ou espalhei fofoca.",
+          "Ouvi e incentivei conversa que destruía a reputação alheia.",
+          "Revelei segredo ou confidência que deveria guardar.",
+          "Julguei ou condenei alguém sem conhecer os fatos.",
+          "Espalhei boato, notícia ou acusação sem verificar.",
+          "Manipulei mensagem, imagem ou informação para enganar.",
+          "Ridicularizei ou expus alguém nas redes sociais.",
+          "Ataquei alguém anonimamente ou por perfil falso.",
+          "Deixei de defender a reputação de um inocente quando podia.",
+          "Fui falso, hipócrita ou mantive duplicidade com alguém.",
+          "Deixei uma mentira continuar produzindo dano sem corrigi-la."
+        ]}
+      ]
+    },
+    {
+      key:"s3", num:"4", short:"4", title:"Vícios, Excessos e Omissões",
+      groups:[
+        { title:"Orgulho, Vaidade e Inveja", items:[
+          "Considerei-me superior aos outros.",
+          "Busquei elogios, aplausos ou destaque de modo desordenado.",
+          "Exagerei qualidades ou feitos para parecer melhor.",
+          "Recusei admitir um erro evidente.",
+          "Recusei correção ou conselho por orgulho.",
+          "Deixei de pedir desculpas quando deveria.",
+          "Desprezei alguém por sua pobreza, aparência, estudo ou posição.",
+          "Senti inveja do bem, talento, beleza ou sucesso de alguém.",
+          "Alegrei-me com o fracasso ou sofrimento de outra pessoa.",
+          "Quis ocupar injustamente o lugar, cargo ou reconhecimento de alguém."
+        ]},
+        { title:"Ira, Avareza, Gula e Preguiça", items:[
+          "Perdi o domínio de mim e explodi de raiva.",
+          "Alimentei ressentimento ou desejo de vingança.",
+          "Coloquei dinheiro, lucro ou bens acima das pessoas.",
+          "Acumulei por egoísmo e me recusei a partilhar quando podia.",
+          "Comi ou bebi com excesso de modo consciente.",
+          "Busquei luxo, compras ou consumo para alimentar vaidade.",
+          "Adiei repetidamente deveres importantes por preguiça.",
+          "Fui acomodado na oração e na busca de conversão.",
+          "Gastei tempo excessivo no celular, internet, redes sociais ou jogos.",
+          "Ignorei pessoas próximas para permanecer diante de uma tela."
+        ]},
+        { title:"O Bem que Deixei de Fazer", items:[
+          "Deixei de ajudar alguém que necessitava e eu podia socorrer.",
+          "Deixei de visitar, telefonar ou cuidar de doente, idoso ou pessoa solitária.",
+          "Deixei de defender uma pessoa tratada injustamente.",
+          "Deixei de reparar um dano que causei.",
+          "Deixei de devolver o que não me pertencia.",
+          "Desperdicei comida, água, energia ou outros recursos.",
+          "Fui indiferente às necessidades da Igreja e dos pobres, embora pudesse colaborar.",
+          "Deixei de cumprir um dever sério por comodismo."
+        ]}
+      ]
+    }
+  ];
+
+  var STORE_KEY = "exame-consciencia-v1";
+  var state = { checked:{} };
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) state = JSON.parse(raw);
+    if (!state.checked) state.checked = {};
+  } catch(e){ state = { checked:{} }; }
+
+  function persist(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+
+  function itemId(si, gi, ii){ return "s"+si+"-g"+gi+"-i"+ii; }
+
+  function totalCount(){
+    var t=0; DATA.forEach(function(s){ s.groups.forEach(function(g){ t+=g.items.length; }); });
+    return t;
+  }
+  function checkedCount(sIdx){
+    var c=0;
+    DATA.forEach(function(s, si){
+      if (sIdx!==undefined && si!==sIdx) return;
+      s.groups.forEach(function(g, gi){
+        g.items.forEach(function(it, ii){
+          if (state.checked[itemId(si,gi,ii)]) c++;
+        });
+      });
+    });
+    return c;
+  }
+
+  var tabsEl = document.querySelector("nav.tabs");
+  var views = {
+    intro: document.getElementById("view-intro"),
+    prep: document.getElementById("view-prep"),
+    s0: document.getElementById("view-s0"),
+    s1: document.getElementById("view-s1"),
+    s2: document.getElementById("view-s2"),
+    s3: document.getElementById("view-s3"),
+    lista: document.getElementById("view-lista")
+  };
+  var TAB_ORDER = ["intro","prep","s0","s1","s2","s3","lista"];
+  var current = "intro";
+
+  function tabLabel(key){
+    if (key==="intro") return "Início";
+    if (key==="prep") return "Preparação";
+    if (key==="lista") return "Lista";
+    var idx = parseInt(key.replace("s",""),10);
+    return DATA[idx].num;
+  }
+
+  function buildTabs(){
+    tabsEl.innerHTML = "";
+    TAB_ORDER.forEach(function(key){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.setAttribute("role","tab");
+      btn.id = "tab-"+key;
+      btn.dataset.key = key;
+      var label = document.createElement("span");
+      label.textContent = tabLabel(key);
+      btn.appendChild(label);
+      if (key.charAt(0)==="s"){
+        var idx = parseInt(key.replace("s",""),10);
+        var badge = document.createElement("span");
+        badge.className = "badge";
+        badge.id = "badge-"+key;
+        var total = DATA[idx].groups.reduce(function(a,g){return a+g.items.length;},0);
+        badge.textContent = checkedCount(idx) + "/" + total;
+        btn.appendChild(badge);
+      }
+      btn.addEventListener("click", function(){ setTab(key); });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function refreshBadges(){
+    DATA.forEach(function(s, si){
+      var badge = document.getElementById("badge-s"+si);
+      if (!badge) return;
+      var total = s.groups.reduce(function(a,g){return a+g.items.length;},0);
+      badge.textContent = checkedCount(si) + "/" + total;
+    });
+    var dockCount = document.getElementById("dockCount");
+    if (dockCount) dockCount.textContent = checkedCount();
+  }
+
+  function setTab(key){
+    current = key;
+    TAB_ORDER.forEach(function(k){
+      views[k].hidden = (k!==key);
+      var btn = document.getElementById("tab-"+k);
+      if (btn) btn.setAttribute("aria-selected", k===key ? "true":"false");
+    });
+    document.getElementById("dock").hidden = (key==="lista");
+    if (key==="lista") renderLista();
+    window.scrollTo({top:0, behavior:"instant" in window ? "instant":"auto"});
+  }
+
+  function renderIntro(){
+    var el = views.intro;
+    el.innerHTML = "";
+
+    var card1 = document.createElement("div");
+    card1.className = "intro-card";
+    card1.innerHTML =
+      "<h2>Como usar a lista na confissão</h2>" +
+      "<p>Reze, leia com calma e marque apenas os pecados que realmente reconhece. Não é necessário entregar este folder ao sacerdote.</p>" +
+      "<ol class=\"steps\">" +
+        "<li>Comece dizendo há quanto tempo não se confessa.</li>" +
+        "<li>Leia ou recorde os itens marcados, com frases curtas e sinceras.</li>" +
+        "<li>Nos pecados graves, diga o número aproximado de vezes ou a frequência.</li>" +
+        "<li>Explique somente o contexto necessário para o sacerdote compreender o pecado.</li>" +
+        "<li>Termine: “Por estes e por todos os meus pecados, peço perdão a Deus.”</li>" +
+      "</ol>";
+    el.appendChild(card1);
+
+    var card2 = document.createElement("div");
+    card2.className = "intro-card muted-card";
+    card2.innerHTML =
+      "<h2 style=\"font-size:1rem\">Modelo objetivo</h2>" +
+      "<blockquote class=\"model\">“Padre, faz ____ que não me confesso. Faltei à Missa ____ vezes; cometi masturbação ____ vezes; furtei pequenas coisas; menti. Por estes e por todos os meus pecados, peço perdão a Deus.”</blockquote>";
+    el.appendChild(card2);
+
+    var card3 = document.createElement("div");
+    card3.className = "intro-card muted-card";
+    card3.innerHTML =
+      "<h2 style=\"font-size:1rem\">Sem escrúpulos</h2>" +
+      "<p>Tentação não é pecado. Para haver pecado mortal, devem existir matéria grave, plena consciência e consentimento deliberado. Se tiver dúvida, pergunte ao confessor.</p>";
+    el.appendChild(card3);
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row";
+    var startBtn = document.createElement("button");
+    startBtn.className = "primary"; startBtn.type = "button";
+    startBtn.textContent = "Começar o exame";
+    startBtn.addEventListener("click", function(){ setTab("s0"); });
+    btnRow.appendChild(startBtn);
+    el.appendChild(btnRow);
+
+    el.appendChild(buildClearRow());
+
+    var source = document.createElement("p");
+    source.className = "source";
+    source.innerHTML = "Marque somente o que você reconhece ter praticado. Esta lista ajuda a lembrar; ela não substitui a sinceridade nem o diálogo com o confessor.<br><br>Baseado no folheto de exame de consciência da Paróquia São José Operário — Formosa, Goiás. Pároco: Pe. Joacir d'Abadia.";
+    el.appendChild(source);
+  }
+
+  var SALMO_50 = [
+    "1. Ao mestre de canto. Salmo de Davi.",
+    "2. Quando o profeta Natã foi encontrá-lo, após o pecado com Betsabé.",
+    "3. Tende piedade de mim, ó Deus, segundo a vossa bondade, e conforme a imensidade de vossa misericórdia, apagai a minha iniqüidade.",
+    "4. Lavai-me totalmente de minha falta, e purificai-me do meu pecado.",
+    "5. Eu reconheço a minha iniqüidade, diante de vós está sempre o meu pecado.",
+    "6. Só contra vós pequei, o que é mau fiz diante de vós. Vossa sentença assim se manifesta justa, e reto o vosso julgamento.",
+    "7. Eis que nasci na culpa, minha mãe concebeu-me no pecado.",
+    "8. Não obstante, amas a sinceridade de coração; infunde-me, pois, a sabedoria no mais íntimo de mim.",
+    "9. Aspergi-me com um ramo e ficarei puro; lavai-me e me tornarei mais branco do que a neve.",
+    "10. Fazei-me ouvir uma palavra de gozo e de alegria, para que exultem os ossos que triturastes.",
+    "11. Dos meus pecados desviai os olhos, e minhas culpas todas apagai.",
+    "12. Ó meu Deus, criai em mim um coração puro, e renovai-me o espírito de firmeza.",
+    "13. De vossa face não me rejeiteis, e nem me priveis de vosso Santo Espírito.",
+    "14. Restituí-me a alegria da salvação, e sustentai-me com uma vontade generosa.",
+    "15. Então, aos maus ensinarei vossos caminhos, e voltarão a vós os pecadores.",
+    "16. Deus, ó Deus, livrai-me da pena deste sangue derramado; e a vossa misericórdia a minha língua exaltará.",
+    "17. Senhor, abri meus lábios, a fim de que minha boca anuncie os vossos louvores.",
+    "18. Vós não vos aplacais com sacrifícios rituais; e se eu vos oferecesse um sacrifício vós não aceitaríeis;",
+    "19. Meu sacrifício, ó Senhor, é um espírito contrito; um coração arrependido e humilhado, ó Deus, não haveis de desprezar.",
+    "20. Senhor, pela vossa bondade, tratai Sião com benevolência, reconstruí os muros de Jerusalém!",
+    "21. Então aceitareis os sacrifícios prescritos, as oferendas e os holocaustos; então, sobre o vosso altar vítimas vos serão oferecidas."
+  ];
+  var SALMO_129 = [
+    "1. Do fundo do abismo, clamo a vós, Senhor!",
+    "2. Senhor, ouvi minha oração; que vossos ouvidos estejam atentos à voz de minha súplica.",
+    "3. Se levardes em conta nossos pecados, Senhor, quem poderá permanecer diante de vós?",
+    "4. Mas em vós se encontra o perdão dos pecados, para que, reverentes, o sirvamos.",
+    "5. Ponho a minha esperança no Senhor. Minha alma tem confiança em sua palavra.",
+    "6. Minha alma espera pelo Senhor, mais ansiosa do que os vigias esperando a manhã;",
+    "7. Mais do que os vigias aguardam a manhã, espere Israel pelo Senhor. Porque junto dele se acha a misericórdia; encontra-se nele copiosa redenção.",
+    "8. Ele mesmo há de remir Israel de todas as suas iniqüidades."
+  ];
+
+  function versesHTML(list){
+    return list.map(function(v){ return "<p class=\"verse\">"+v+"</p>"; }).join("");
+  }
+
+  function renderPrep(){
+    var el = views.prep;
+    el.innerHTML = "";
+
+    var head = document.createElement("div");
+    head.innerHTML = "<span class=\"eyebrow\">Antes do exame</span><h2>Preparação para uma boa confissão</h2>";
+    el.appendChild(head);
+
+    var card1 = document.createElement("div");
+    card1.className = "intro-card";
+    card1.innerHTML =
+      "<h2 style=\"font-size:1rem\">1. Orações para infundir na alma o arrependimento necessário para a confissão</h2>" +
+      "<blockquote class=\"model\">Em nome do Pai, do Filho, e do Espírito Santo, Amém.</blockquote>";
+    el.appendChild(card1);
+
+    var cardA = document.createElement("div");
+    cardA.className = "intro-card muted-card";
+    cardA.innerHTML =
+      "<h2 style=\"font-size:1rem\">a. Vinde, Espírito Santo</h2>" +
+      "<p>Vinde, Espírito Santo, enchei os corações dos vossos fiéis e acendei neles o fogo do vosso amor.</p>" +
+      "<p>Enviai o vosso Espírito e tudo será criado. E renovareis a face da terra.</p>" +
+      "<p><em>Oremos.</em> Ó Deus, que instruístes os corações dos vossos fiéis com a luz do Espírito Santo, concedei-nos que, pelo mesmo Espírito, saibamos apreciar retamente todas as coisas, e gozemos sempre da sua consolação. Por Cristo, nosso Senhor. Amém.</p>";
+    el.appendChild(cardA);
+
+    var cardB = document.createElement("div");
+    cardB.className = "intro-card muted-card";
+    cardB.innerHTML =
+      "<h2 style=\"font-size:1rem\">b. Pai Nosso, Ave Maria e Glória</h2>" +
+      "<p><strong>Pai Nosso</strong> que estais nos céus, santificado seja o vosso Nome, venha a nós o vosso Reino, seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje, perdoai-nos as nossas ofensas, assim como nós perdoamos a quem nos tem ofendido, e não nos deixeis cair em tentação, mas livrai-nos do mal. Amém.</p>" +
+      "<p><strong>Ave Maria</strong>, cheia de graça, o Senhor é convosco, bendita sois vós entre as mulheres e bendito é o fruto do vosso ventre, Jesus. Santa Maria, Mãe de Deus, rogai por nós pecadores, agora e na hora da nossa morte. Amém.</p>" +
+      "<p><strong>Glória</strong> ao Pai, e ao Filho, e ao Espírito Santo. Como era no princípio, agora e sempre, e por todos os séculos dos séculos. Amém.</p>";
+    el.appendChild(cardB);
+
+    var cardC = document.createElement("div");
+    cardC.className = "intro-card muted-card";
+    cardC.innerHTML =
+      "<h2 style=\"font-size:1rem\">c. Salmo 50 — \u201cMiserere\u201d</h2>" +
+      "<p class=\"section-intro\">(Que quer dizer \u201ctem piedade\u201d, que é a primeira palavra do Salmo.)</p>" +
+      versesHTML(SALMO_50);
+    el.appendChild(cardC);
+
+    var cardD = document.createElement("div");
+    cardD.className = "intro-card muted-card";
+    cardD.innerHTML =
+      "<h2 style=\"font-size:1rem\">d. Salmo 129 — \u201cDe profundis\u201d</h2>" +
+      "<p class=\"section-intro\">(Que quer dizer \u201cdo fundo\u201d, que é como começa o Salmo.)</p>" +
+      versesHTML(SALMO_129);
+    el.appendChild(cardD);
+
+    var card2 = document.createElement("div");
+    card2.className = "intro-card";
+    card2.innerHTML =
+      "<h2 style=\"font-size:1rem\">2. Condições para a boa confissão</h2>" +
+      "<p>O conhecimento dos próprios pecados, sem o necessário arrependimento, em vez de diminuir, só aumenta a gravidade das nossas culpas. E arrepender-se sem pedir perdão agrava ainda mais o erro. É necessário reconhecer que erramos, arrepender-se dos erros, e pedir perdão por esses erros.</p>";
+    el.appendChild(card2);
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row";
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "primary"; nextBtn.type = "button";
+    nextBtn.textContent = "Começar o exame";
+    nextBtn.addEventListener("click", function(){ setTab("s0"); });
+    btnRow.appendChild(nextBtn);
+    el.appendChild(btnRow);
+  }
+
+  function buildClearRow(){
+    var wrap = document.createElement("div");
+    var row = document.createElement("div");
+    row.className = "btn-row";
+    var clearBtn = document.createElement("button");
+    clearBtn.className = "ghost"; clearBtn.type = "button";
+    clearBtn.textContent = "Limpar todas as marcações";
+    row.appendChild(clearBtn);
+    wrap.appendChild(row);
+
+    var confirmRow = document.createElement("div");
+    confirmRow.className = "confirm-row";
+    confirmRow.hidden = true;
+    confirmRow.innerHTML = "<span>Apagar todos os itens marcados?</span>";
+    var yesBtn = document.createElement("button");
+    yesBtn.className = "primary"; yesBtn.type="button"; yesBtn.textContent = "Sim, limpar";
+    var noBtn = document.createElement("button");
+    noBtn.className = "secondary"; noBtn.type="button"; noBtn.textContent = "Cancelar";
+    confirmRow.appendChild(yesBtn);
+    confirmRow.appendChild(noBtn);
+    wrap.appendChild(confirmRow);
+
+    clearBtn.addEventListener("click", function(){
+      confirmRow.hidden = false; row.hidden = true;
+    });
+    noBtn.addEventListener("click", function(){
+      confirmRow.hidden = true; row.hidden = false;
+    });
+    yesBtn.addEventListener("click", function(){
+      state.checked = {}; persist();
+      renderAllSections(); refreshBadges();
+      confirmRow.hidden = true; row.hidden = false;
+      showToast("Marcações apagadas.");
+      if (current === "lista") renderLista();
+    });
+    return wrap;
+  }
+
+  function renderSection(si){
+    var s = DATA[si];
+    var el = views["s"+si];
+    el.innerHTML = "";
+
+    var head = document.createElement("div");
+    head.innerHTML = "<span class=\"eyebrow\">Seção " + s.num + "</span><h2>" + s.title + "</h2><p class=\"section-intro\">Marque somente o que você cometeu.</p>";
+    el.appendChild(head);
+
+    s.groups.forEach(function(g, gi){
+      var groupEl = document.createElement("div");
+      groupEl.className = "group";
+      var titleEl = document.createElement("div");
+      titleEl.className = "group-title";
+      titleEl.innerHTML = "<span>" + g.title + "</span><span class=\"count\" id=\"gcount-"+si+"-"+gi+"\"></span>";
+      groupEl.appendChild(titleEl);
+
+      var ul = document.createElement("ul");
+      ul.className = "items";
+      g.items.forEach(function(text, ii){
+        var id = itemId(si,gi,ii);
+        var li = document.createElement("li");
+        var label = document.createElement("label");
+        label.className = "item";
+        var input = document.createElement("input");
+        input.type = "checkbox";
+        input.id = id;
+        input.checked = !!state.checked[id];
+        input.addEventListener("change", function(){
+          if (input.checked) state.checked[id] = true;
+          else delete state.checked[id];
+          persist();
+          updateGroupCount(si,gi);
+          refreshBadges();
+        });
+        var span = document.createElement("span");
+        span.textContent = text;
+        label.appendChild(input);
+        label.appendChild(span);
+        li.appendChild(label);
+        ul.appendChild(li);
+      });
+      groupEl.appendChild(ul);
+      el.appendChild(groupEl);
+      updateGroupCount(si,gi);
+    });
+  }
+
+  function updateGroupCount(si,gi){
+    var g = DATA[si].groups[gi];
+    var c = 0;
+    g.items.forEach(function(_, ii){ if (state.checked[itemId(si,gi,ii)]) c++; });
+    var badge = document.getElementById("gcount-"+si+"-"+gi);
+    if (badge) badge.textContent = c>0 ? (c+" marcado"+(c>1?"s":"")) : "";
+  }
+
+  function renderAllSections(){
+    DATA.forEach(function(_, si){ renderSection(si); });
+  }
+
+  function renderLista(){
+    var el = views.lista;
+    el.innerHTML = "";
+
+    var head = document.createElement("div");
+    head.innerHTML = "<span class=\"eyebrow\">Resumo</span><h2>Minha Lista</h2><p class=\"section-intro\">Leve estes itens para a confissão. Leia-os com frases curtas, como no modelo da aba Início.</p>";
+    el.appendChild(head);
+
+    var any = false;
+    DATA.forEach(function(s, si){
+      var groupsWithItems = [];
+      s.groups.forEach(function(g, gi){
+        var checkedItems = [];
+        g.items.forEach(function(text, ii){
+          if (state.checked[itemId(si,gi,ii)]) checkedItems.push(text);
+        });
+        if (checkedItems.length) groupsWithItems.push({ title:g.title, items:checkedItems });
+      });
+      if (!groupsWithItems.length) return;
+      any = true;
+
+      var sGroup = document.createElement("div");
+      sGroup.className = "summary-group";
+      var sTitle = document.createElement("h3");
+      sTitle.textContent = s.num + ". " + s.title;
+      sGroup.appendChild(sTitle);
+
+      groupsWithItems.forEach(function(g){
+        var subEl = document.createElement("div");
+        subEl.className = "summary-sub";
+        subEl.textContent = g.title;
+        sGroup.appendChild(subEl);
+        var ol = document.createElement("ol");
+        ol.className = "summary-list";
+        g.items.forEach(function(text){
+          var li = document.createElement("li");
+          li.textContent = text;
+          ol.appendChild(li);
+        });
+        sGroup.appendChild(ol);
+      });
+
+      el.appendChild(sGroup);
+    });
+
+    if (!any){
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "<strong>Nenhum item marcado ainda.</strong><span>Volte às abas 1 a 4 e marque o que reconhece ter praticado. Os itens marcados vão aparecer aqui, prontos para a confissão.</span>";
+      var goBtn = document.createElement("button");
+      goBtn.className = "secondary"; goBtn.type = "button";
+      goBtn.textContent = "Ir para a seção 1";
+      goBtn.addEventListener("click", function(){ setTab("s0"); });
+      empty.appendChild(goBtn);
+      el.appendChild(empty);
+    } else {
+      var copyBtn = document.createElement("button");
+      copyBtn.className = "secondary"; copyBtn.type = "button";
+      copyBtn.textContent = "Copiar lista como texto";
+      copyBtn.addEventListener("click", function(){ copyListAsText(); });
+      var row = document.createElement("div");
+      row.className = "btn-row";
+      row.appendChild(copyBtn);
+      el.appendChild(row);
+    }
+
+    var prayer = document.createElement("div");
+    prayer.className = "prayer-card";
+    prayer.innerHTML =
+      "<h2 style=\"font-size:1rem\">Ato de Contrição</h2>" +
+      "<p>Meu Deus, arrependo-me de todo o coração de vos ter ofendido, porque sois infinitamente bom. Com a vossa graça, proponho não mais pecar, evitar as ocasiões de pecado e reparar o mal praticado. Amém.</p>";
+    var prayerCopyBtn = document.createElement("button");
+    prayerCopyBtn.className = "ghost"; prayerCopyBtn.type = "button";
+    prayerCopyBtn.textContent = "Copiar oração";
+    prayerCopyBtn.addEventListener("click", function(){
+      copyText("Meu Deus, arrependo-me de todo o coração de vos ter ofendido, porque sois infinitamente bom. Com a vossa graça, proponho não mais pecar, evitar as ocasiões de pecado e reparar o mal praticado. Amém.", "Oração copiada.");
+    });
+    prayer.appendChild(prayerCopyBtn);
+    el.appendChild(prayer);
+
+    el.appendChild(buildClearRow());
+  }
+
+  function copyListAsText(){
+    var lines = ["Minha lista — exame de consciência"];
+    DATA.forEach(function(s, si){
+      var any = false;
+      var block = [];
+      s.groups.forEach(function(g, gi){
+        var items = [];
+        g.items.forEach(function(text, ii){
+          if (state.checked[itemId(si,gi,ii)]) items.push("- " + text);
+        });
+        if (items.length){
+          any = true;
+          block.push(g.title + ":");
+          block = block.concat(items);
+        }
+      });
+      if (any){
+        lines.push("");
+        lines.push(s.num + ". " + s.title);
+        lines = lines.concat(block);
+      }
+    });
+    copyText(lines.join("\n"), "Lista copiada.");
+  }
+
+  function copyText(text, message){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast(message);
+      }).catch(function(){ fallbackCopy(text, message); });
+    } else {
+      fallbackCopy(text, message);
+    }
+  }
+  function fallbackCopy(text, message){
+    try{
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast(message);
+    } catch(e){
+      showToast("Não foi possível copiar.");
+    }
+  }
+
+  var toastTimer = null;
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+  }
+
+  document.getElementById("dockBtn").addEventListener("click", function(){ setTab("lista"); });
+
+  buildTabs();
+  renderIntro();
+  renderPrep();
+  renderAllSections();
+  refreshBadges();
+  setTab("intro");
+})();
+</script>
+
+</body></html>
